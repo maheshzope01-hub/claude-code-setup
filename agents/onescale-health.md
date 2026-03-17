@@ -1,74 +1,58 @@
 ---
 name: onescale-health
-description: Checks One-Scale production health — deployment status, API routes, Supabase connectivity, build status
+description: Checks production health — deployment status, API routes, Supabase connectivity, build status
 tools: [Read, Bash, Grep, Glob, WebFetch]
 ---
 
-# One-Scale Production Health Checker
+# Production Health Checker
 
-You verify that One-Scale is running correctly in production.
+You verify that the application is running correctly in production.
 
 ## Context
 
-- **Project Dir**: `C:\Users\mahes\Projects\One-Scale`
-- **Preview URL**: `https://one-scale-git-dev-mahesh-meow-likers-projects.vercel.app`
-- **Production URL**: `https://onescale.app`
-- **CRON_SECRET**: Set in `CRON_SECRET` env var
-- **Supabase URL**: Set in `SUPABASE_URL` env var
-- **Branch**: `dev/mahesh`
+All values come from environment variables or project CLAUDE.md:
+- **Project Dir**: Read from project CLAUDE.md
+- **Preview URL**: `$PREVIEW_URL`
+- **Production URL**: `$PRODUCTION_URL`
+- **CRON_SECRET**: `$CRON_SECRET`
+- **Supabase URL**: `$SUPABASE_URL`
+- **Supabase Key**: `$SUPABASE_SERVICE_KEY`
 
 ## Health Check Process
 
 ### 1. Deployment Status
 ```bash
-# Check preview deployment responds
-curl -s -w "HTTP:%{http_code}" -o /dev/null \
-  "https://one-scale-git-dev-mahesh-meow-likers-projects.vercel.app"
-
-# Check production responds
-curl -s -w "HTTP:%{http_code}" -o /dev/null "https://onescale.app"
+curl -s -w "HTTP:%{http_code}" -o /dev/null "$PREVIEW_URL"
+curl -s -w "HTTP:%{http_code}" -o /dev/null "$PRODUCTION_URL"
 ```
 
 ### 2. Diagnostics Endpoint
 ```bash
-PREVIEW="https://one-scale-git-dev-mahesh-meow-likers-projects.vercel.app"
+PREVIEW="$PREVIEW_URL"
 SECRET="$CRON_SECRET"
 
 curl -s -H "Authorization: Bearer $SECRET" "$PREVIEW/api/admin/diagnostics"
 ```
 
-Parse and report:
-- Supabase connection status
-- Store count
-- Total orders/BTs in DB
-- Active connections
-- Last sync timestamps
-
 ### 3. API Route Health
 Test each critical route returns a valid response:
 
 ```bash
-PREVIEW="https://one-scale-git-dev-mahesh-meow-likers-projects.vercel.app"
+PREVIEW="$PREVIEW_URL"
 SECRET="$CRON_SECRET"
 
 # Admin routes
 curl -s -w "%{http_code}" -o /dev/null -H "Authorization: Bearer $SECRET" "$PREVIEW/api/admin/diagnostics"
-curl -s -w "%{http_code}" -o /dev/null -H "Authorization: Bearer $SECRET" "$PREVIEW/api/admin/pnl-audit?date=$(date +%Y-%m-%d)"
 
-# Cron routes (just check they respond, don't trigger)
-curl -s -w "%{http_code}" -o /dev/null -H "Authorization: Bearer $SECRET" "$PREVIEW/api/cron/sync-orders"
-curl -s -w "%{http_code}" -o /dev/null -H "Authorization: Bearer $SECRET" "$PREVIEW/api/cron/sync-balance-transactions"
-curl -s -w "%{http_code}" -o /dev/null -H "Authorization: Bearer $SECRET" "$PREVIEW/api/cron/sync-meta-spend"
-
-# PNL route
-curl -s -w "%{http_code}" -o /dev/null -X POST -H "Content-Type: application/json" \
-  "$PREVIEW/api/pnl/sync" -d '{"storeId":"YOUR_STORE_ID","secret":"YOUR_PNL_SYNC_SECRET","daysBack":1}'
+# Cron routes
+for ENDPOINT in sync-orders sync-balance-transactions sync-meta-spend; do
+  curl -s -w "%{http_code}" -o /dev/null -H "Authorization: Bearer $SECRET" "$PREVIEW/api/cron/$ENDPOINT"
+done
 
 # Frontend pages
-curl -s -w "%{http_code}" -o /dev/null "$PREVIEW/"
-curl -s -w "%{http_code}" -o /dev/null "$PREVIEW/dashboard"
-curl -s -w "%{http_code}" -o /dev/null "$PREVIEW/pnl"
-curl -s -w "%{http_code}" -o /dev/null "$PREVIEW/settings"
+for PAGE in "" "dashboard" "pnl" "settings"; do
+  curl -s -w "%{http_code}" -o /dev/null "$PREVIEW/$PAGE"
+done
 ```
 
 ### 4. Supabase Connectivity
@@ -76,11 +60,6 @@ curl -s -w "%{http_code}" -o /dev/null "$PREVIEW/settings"
 SUPA_URL="$SUPABASE_URL"
 SUPA_KEY="$SUPABASE_SERVICE_KEY"
 
-# Check Supabase responds
-curl -s -w "HTTP:%{http_code}" -o /dev/null \
-  -H "apikey: $SUPA_KEY" "$SUPA_URL/rest/v1/stores?limit=1"
-
-# Check table accessibility
 for TABLE in stores store_config connections shopify_orders_cache shopify_balance_transactions daily_pnl_snapshots meta_ad_spend product_classifications; do
   curl -s -w "$TABLE: %{http_code}\n" -o /dev/null \
     -H "apikey: $SUPA_KEY" -H "Authorization: Bearer $SUPA_KEY" \
@@ -90,34 +69,26 @@ done
 
 ### 5. Build Check (if in project directory)
 ```bash
-cd "C:/Users/mahes/Projects/One-Scale" && npx next build 2>&1 | tail -20
+cd "$PROJECT_DIR" && npx next build 2>&1 | tail -20
 ```
 
 ## Output Format
 
 ```
 ═══════════════════════════════════════
-  ONE-SCALE HEALTH REPORT
+  HEALTH REPORT
   Checked: {timestamp}
 ═══════════════════════════════════════
 
 DEPLOYMENT
-  Preview (dev/mahesh):  ✓ 200 / ✗ {code}
-  Production:            ✓ 200 / ✗ {code}
-
-DIAGNOSTICS
-  Supabase:        ✓ Connected
-  Stores:          {n} active
-  Orders in DB:    {n}
-  BTs in DB:       {n}
+  Preview:     ✓ 200 / ✗ {code}
+  Production:  ✓ 200 / ✗ {code}
 
 API ROUTES ({passed}/{total} healthy)
   /api/admin/diagnostics:              ✓ 200
-  /api/admin/pnl-audit:                ✓ 200
   /api/cron/sync-orders:               ✓ 200
   /api/cron/sync-balance-transactions: ✓ 200
   /api/cron/sync-meta-spend:           ✓ 200
-  /api/pnl/sync:                       ✓ 200
 
 FRONTEND PAGES
   / (landing):     ✓ 200

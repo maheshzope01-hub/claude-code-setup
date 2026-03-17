@@ -1,107 +1,87 @@
 # Claude Code Power Setup
 
-Complete Claude Code configuration with 75+ skills, 21 plugins, 6 MCP servers, and 24 custom agents.
+Complete Claude Code configuration with 75+ skills, 21 plugins, and 6 MCP servers.
 
-## Quick Install (1 command)
+## Quick Install
 
 ```bash
+git clone https://github.com/maheshzope01-hub/claude-code-setup.git
+cd claude-code-setup
 bash setup.sh
 ```
-
-Or follow the manual steps below.
 
 ## What You Get
 
 | Category | Count |
 |---|---|
-| Plugins (enabled) | 21 |
 | Skills | 75+ |
+| Plugins (enabled) | 21 |
 | MCP Servers | 6 |
-| Agents | 24 (15 GSD + 3 plugin + 6 custom) |
-| UI/UX Design Data | 48 CSV databases |
-| Hooks | 3 |
+| UI/UX Design Databases | 48 CSV files |
+| Framework Stacks | 13 |
+
+## Included
+
+### Superpowers (14 skills)
+Dev workflow automation — brainstorming, TDD, debugging, code review, plans, verification, parallel agents, git worktrees.
+
+### GSD — Get Stuff Done (38 skills)
+Project management — milestones, phases, planning, execution, autonomous mode, UI review, validation, todos, notes.
+
+### Plugins (21 enabled)
+- **Dev workflow**: code-review, code-simplifier, commit-commands, feature-dev, pr-review-toolkit, security-guidance
+- **Frontend**: frontend-design, playground
+- **Integrations**: supabase, stripe, github, context7, playwright, slack
+- **Meta**: claude-code-setup, claude-md-management, hookify, plugin-dev, skill-creator, typescript-lsp
+
+### MCP Servers (6)
+- **Supabase** — direct database access
+- **GitHub** — PR/issue management
+- **Vercel** — deployment management
+- **Shopify Dev** — Shopify API docs & schemas
+- **Context7** — up-to-date library documentation
+- **Playwright** — browser testing & screenshots
+
+### UI/UX Pro Max Skill
+Searchable design intelligence with 48 CSV databases covering:
+- 13 design domains (styles, colors, typography, charts, UX, icons, etc.)
+- 13 framework stacks (React, Next.js, Vue, Svelte, Flutter, SwiftUI, etc.)
 
 ## Manual Install
 
-### Step 1: Install Superpowers + GSD
+If you prefer step-by-step:
 
+### 1. GSD
 ```bash
-# Superpowers (20+ dev workflow skills)
-# Installs via Claude Code plugin marketplace — run inside Claude Code:
-# /install superpowers
-
-# GSD (Get Stuff Done — 38 project management skills)
 npx get-shit-done-cc@latest
 ```
 
-### Step 2: Install UI/UX Pro Max Skill
-
+### 2. UI/UX Pro Max
 ```bash
 mkdir -p ~/.claude/skills
-cd ~/.claude/skills
-git clone https://github.com/nextlevelbuilder/ui-ux-pro-max-skill.git
+git clone https://github.com/nextlevelbuilder/ui-ux-pro-max-skill.git ~/.claude/skills/ui-ux-pro-max-skill
 ```
 
-### Step 3: Enable Plugins
+### 3. Plugins
+Copy `settings.json` contents into `~/.claude/settings.json` (merge `enabledPlugins` if you have existing settings).
 
-Copy `settings.json` to `~/.claude/settings.json` (merge with existing if you have one).
-
-### Step 4: Add MCP Servers
-
+### 4. MCP Servers
 ```bash
-# HTTP servers (OAuth — will prompt browser login)
 claude mcp add --transport http supabase "https://mcp.supabase.com/mcp"
 claude mcp add --transport http github https://api.githubcopilot.com/mcp/
 claude mcp add --transport http vercel https://mcp.vercel.com
 
-# Stdio servers
+# Windows:
 claude mcp add --transport stdio shopify-dev-mcp -- cmd /c npx -y @shopify/dev-mcp@latest
-# Note: Context7 and Playwright come from plugins, no manual add needed
+# Mac/Linux:
+claude mcp add --transport stdio shopify-dev-mcp -- npx -y @shopify/dev-mcp@latest
 ```
 
 Then run `/mcp` inside Claude Code to authenticate.
 
-### Step 5: Custom Agents (Optional)
-
-Copy the `agents/` folder to `~/.claude/agents/`.
-
-## Files Included
-
-```
-claude-code-setup/
-├── README.md              # This file
-├── setup.sh               # One-command installer
-├── settings.json          # Plugin configuration (21 enabled)
-├── agents/                # Custom agents
-│   ├── onescale-ops.md
-│   ├── onescale-auditor.md
-│   ├── onescale-sync-monitor.md
-│   ├── onescale-health.md
-│   ├── onescale-alerts.md
-│   └── onescale-tester.md
-└── skills-list.md         # Full skill reference
-```
-
-## Plugin List (21 Enabled)
-
-### Dev Workflow
-- superpowers (brainstorming, TDD, debugging, code review, plans, verification)
-- code-review, code-simplifier, commit-commands, feature-dev, pr-review-toolkit
-- security-guidance, typescript-lsp
-
-### Frontend & Design
-- frontend-design, playground (code maps, design, diff review)
-- ui-ux-pro-max-skill (48 CSV databases, 13 framework stacks)
-
-### Integrations
-- supabase, stripe, github, context7, playwright, slack
-
-### Meta / Building
-- claude-code-setup, claude-md-management, hookify, plugin-dev, skill-creator
-
 ## Requirements
 
-- Claude Code CLI installed
+- Claude Code CLI
 - Node.js 18+
-- Python 3.x (for ui-ux-pro-max search)
 - Git
+- Python 3.x (optional, for UI/UX Pro Max search)
